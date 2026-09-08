@@ -1,5 +1,7 @@
 const BANKS_KEY = 'edu-challenge.questionBanks'
 const TEAMS_KEY = 'edu-challenge.teams'
+const CHALLENGES_KEY = 'edu-challenge.challenges'
+const TIMER_KEY = 'edu-challenge.timerDuration'
 
 function readJSON(key, fallback) {
   try {
@@ -80,12 +82,20 @@ export function deleteQuestionBank(bankId) {
   persistQuestionBanks(loadQuestionBanks().filter((b) => b.id !== bankId))
 }
 
-export function addQuestion(bankId, text) {
+export function addQuestion(bankId, question) {
   const banks = loadQuestionBanks()
   const bank = banks.find((b) => b.id === bankId)
   if (!bank) return null
   bank.questions = bank.questions || []
-  bank.questions.push({ id: uid(), text, createdAt: nowISO() })
+  const q = {
+    id: uid(),
+    type: question.type || 'text',
+    text: question.text || question,
+    options: question.options || null,
+    correctIndex: question.correctIndex ?? null,
+    createdAt: nowISO(),
+  }
+  bank.questions.push(q)
   bank.updatedAt = nowISO()
   persistQuestionBanks(banks)
   return bank
@@ -98,6 +108,18 @@ export function editQuestion(bankId, questionId, text) {
   const question = (bank.questions || []).find((q) => q.id === questionId)
   if (!question) return null
   question.text = text
+  bank.updatedAt = nowISO()
+  persistQuestionBanks(banks)
+  return bank
+}
+
+export function updateQuestion(bankId, questionId, patch) {
+  const banks = loadQuestionBanks()
+  const bank = banks.find((b) => b.id === bankId)
+  if (!bank) return null
+  const question = (bank.questions || []).find((q) => q.id === questionId)
+  if (!question) return null
+  Object.assign(question, patch)
   bank.updatedAt = nowISO()
   persistQuestionBanks(banks)
   return bank
@@ -151,6 +173,36 @@ export function addTeamPoints(teamId, delta) {
   team.points = Math.max(0, (team.points || 0) + delta)
   persistTeams(teams)
   return team
+}
+
+/* ================= سجل التحديات ================= */
+
+export function loadChallenges() {
+  return readJSON(CHALLENGES_KEY, [])
+}
+
+export function saveChallenge(challenge) {
+  const challenges = loadChallenges()
+  challenges.unshift({
+    id: uid(),
+    ...challenge,
+    createdAt: nowISO(),
+  })
+  writeJSON(CHALLENGES_KEY, challenges)
+}
+
+export function clearChallenges() {
+  writeJSON(CHALLENGES_KEY, [])
+}
+
+/* ================= مدة المؤقت ================= */
+
+export function loadTimerDuration() {
+  return readJSON(TIMER_KEY, 60)
+}
+
+export function saveTimerDuration(seconds) {
+  writeJSON(TIMER_KEY, seconds)
 }
 
 export { formatDate }

@@ -4,7 +4,6 @@ import QuestionBanks from './pages/QuestionBanks.jsx'
 import Teams from './pages/Teams.jsx'
 import Challenges from './pages/Challenges.jsx'
 import Settings from './pages/Settings.jsx'
-import ChallengeSetup from './pages/ChallengeSetup.jsx'
 import QuestionRound from './pages/QuestionRound.jsx'
 
 export default function App() {
@@ -14,7 +13,6 @@ export default function App() {
         <Route path="/" element={<QuestionBanks />} />
         <Route path="/teams" element={<Teams />} />
         <Route path="/challenges" element={<Challenges />} />
-        <Route path="/challenges/setup" element={<ChallengeSetup />} />
         <Route path="/challenges/round" element={<QuestionRound />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<QuestionBanks />} />

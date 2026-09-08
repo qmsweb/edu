@@ -1,16 +1,26 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { loadTeams, addTeamPoints } from '../utils/storage.js'
-import { loadQuestionBanks } from '../utils/storage.js'
+import {
+  loadTeams,
+  addTeamPoints,
+  loadQuestionBanks,
+  loadTimerDuration,
+  saveChallenge,
+} from '../utils/storage.js'
 
 const confettiColors = ['#6366f1', '#f43f5e', '#f59e0b', '#10b981', '#0ea5e9', '#a855f7']
 
 export default function QuestionRound() {
   const location = useLocation()
-  const { teamAId, teamBId, bankId } = location.state || {}
+  const { teamAId, teamBId, bankId, timerDuration: passedDuration } = location.state || {}
   const [questionIndex, setQuestionIndex] = useState(0)
   const [teams, setTeams] = useState(loadTeams)
   const [scoreFlash, setScoreFlash] = useState(null)
+  const [duration] = useState(() => passedDuration || loadTimerDuration() || 60)
+  const [timer, setTimer] = useState(duration)
+  const [answeredTeam, setAnsweredTeam] = useState(null)
+  const [wrongPick, setWrongPick] = useState(null)
+  const [resultSaved, setResultSaved] = useState(false)
 
   const banks = loadQuestionBanks()
   const teamA = teams.find((t) => t.id === teamAId)
@@ -21,6 +31,10 @@ export default function QuestionRound() {
   const total = questions.length
   const current = questions[questionIndex]
   const finished = !current
+  const isMc = !!current && current.type === 'mc' && Array.isArray(current.options)
+  const timeUp = !finished && timer <= 0
+  const answered = !finished && (timeUp || !!answeredTeam)
+
   const winner = finished && teamA && teamB
     ? teamA.points === teamB.points
       ? null
@@ -29,7 +43,35 @@ export default function QuestionRound() {
         : teamB
     : null
 
-  function handleCorrect(teamId) {
+  useEffect(() => {
+    if (finished) return
+    setTimer(duration)
+    setAnsweredTeam(null)
+    setWrongPick(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionIndex, finished])
+
+  useEffect(() => {
+    if (finished || answered) return
+    const id = window.setTimeout(() => setTimer((t) => t - 1), 1000)
+    return () => window.clearTimeout(id)
+  }, [timer, finished, answered])
+
+  useEffect(() => {
+    if (!finished || resultSaved || !teamA || !teamB || !bank) return
+    setResultSaved(true)
+    saveChallenge({
+      teamAName: teamA.name,
+      teamAPoints: teamA.points,
+      teamBName: teamB.name,
+      teamBPoints: teamB.points,
+      winner: winner ? winner.name : null,
+      bankTitle: bank.title,
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finished, resultSaved, teamA, teamB, bank, winner])
+
+  function creditTeam(teamId) {
     addTeamPoints(teamId, 1)
     setTeams(loadTeams())
     setScoreFlash({ teamId, nonce: Date.now() })
@@ -37,6 +79,20 @@ export default function QuestionRound() {
       () => setScoreFlash((f) => (f && f.teamId === teamId ? null : f)),
       1200
     )
+    handleAdvance()
+  }
+
+  function handleMcPick(index) {
+    if (finished || answered || !isMc) return
+    if (index === current.correctIndex) {
+      setAnsweredTeam('pick') // فتح شاشة اختيار الفريق
+    } else {
+      setWrongPick(index)
+      window.setTimeout(() => setWrongPick(null), 900)
+    }
+  }
+
+  function handleAdvance() {
     setQuestionIndex((i) => i + 1)
   }
 
@@ -55,7 +111,7 @@ export default function QuestionRound() {
             اختر الفريقين وبنك الأسئلة من شاشة إعداد التحدي أولاً
           </p>
           <Link
-            to="/challenges/setup"
+            to="/challenges"
             className="inline-flex px-4 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 transition-colors"
           >
             العودة لإعداد التحدي
@@ -65,9 +121,21 @@ export default function QuestionRound() {
     )
   }
 
+  if (finished) {
+    return (
+      <div className="space-y-6">
+        <RoundHeader finished bank={bank} questionIndex={questionIndex} total={total} />
+        <ResultCard teamA={teamA} teamB={teamB} winner={winner} />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
-      <RoundHeader bank={bank} questionIndex={questionIndex} total={total} finished={finished} />
+      <RoundHeader bank={bank} questionIndex={questionIndex} total={total} />
+
+      {/* المؤقت */}
+      <TimerBar seconds={timer} duration={duration} />
 
       {/* فريقا المواجهة */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -77,8 +145,8 @@ export default function QuestionRound() {
           ring="ring-brand-300"
           accent="text-brand-700 bg-brand-50 border-brand-200 hover:bg-brand-100"
           flash={scoreFlash}
-          onCorrect={() => handleCorrect(teamA.id)}
-          disabled={finished}
+          showJudge={!isMc && !finished && !answered}
+          onCorrect={() => creditTeam(teamA.id)}
         />
         <TeamPanel
           team={teamB}
@@ -86,41 +154,167 @@ export default function QuestionRound() {
           ring="ring-rose-300"
           accent="text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100"
           flash={scoreFlash}
-          onCorrect={() => handleCorrect(teamB.id)}
-          disabled={finished}
+          showJudge={!isMc && !finished && !answered}
+          onCorrect={() => creditTeam(teamB.id)}
         />
       </div>
 
-      {finished ? (
-        <ResultCard teamA={teamA} teamB={teamB} winner={winner} />
-      ) : (
-        <>
-          {/* السؤال الحالي */}
-          <div key={current.id} className="animate-question-in bg-white rounded-2xl border border-slate-200 p-8 sm:p-10 text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <span className="text-xs font-bold text-brand-600 bg-brand-50 rounded-full px-3 py-1">
-                السؤال {questionIndex + 1} من {total}
-              </span>
-              <span className="text-xs text-slate-400">
-                {bank.subject && `${bank.subject} · `}
-                {bank.title}
-              </span>
-            </div>
-            <p className="text-xl sm:text-2xl font-bold text-slate-800 leading-relaxed max-w-2xl mx-auto">
-              {current.text}
-            </p>
-          </div>
+      <div key={current.id} className="animate-question-in bg-white rounded-2xl border border-slate-200 p-8 sm:p-10 text-center">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <span className="text-xs font-bold text-brand-600 bg-brand-50 rounded-full px-3 py-1">
+            السؤال {questionIndex + 1} من {total}
+          </span>
+          <span className="text-xs text-slate-400">
+            {bank.subject && `${bank.subject} · `}
+            {bank.title}
+          </span>
+          {isMc && (
+            <span className="text-xs font-bold text-sky-600 bg-sky-50 rounded-full px-3 py-1">
+              اختيار من متعدد
+            </span>
+          )}
+        </div>
+        <p className="text-xl sm:text-2xl font-bold text-slate-800 leading-relaxed max-w-2xl mx-auto">
+          {current.text}
+        </p>
 
-          <p className="text-center text-sm text-slate-400">
-            عند إجابة الفريق إجابةً صحيحة، اضغط زر المنافس المقابل لإضافة نقطة والانتقال للسؤال التالي
-          </p>
-        </>
+        {isMc && (
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
+            {current.options.map((option, i) => {
+              let cls = 'border-slate-200 hover:border-brand-400 hover:bg-brand-50 text-slate-700'
+              let extra = null
+              if (answered) {
+                if (i === current.correctIndex) {
+                  cls = 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                  extra = (
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )
+                } else if (i === wrongPick) {
+                  cls = 'border-rose-400 bg-rose-50 text-rose-700'
+                  extra = (
+                    <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )
+                } else {
+                  cls = 'border-slate-200 bg-slate-50 text-slate-400'
+                }
+              } else if (wrongPick === i) {
+                cls = 'border-rose-400 bg-rose-50 text-rose-700 animate-shake'
+                extra = (
+                  <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                )
+              }
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleMcPick(i)}
+                  disabled={answered}
+                  className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-start text-sm font-semibold transition-all active:scale-[0.98] ${cls} ${
+                    answered ? 'cursor-default' : 'cursor-pointer'
+                  }`}
+                >
+                  <span className="w-8 h-8 shrink-0 rounded-full bg-white border border-current flex items-center justify-center text-xs font-black">
+                    {String.fromCharCode(65 + i)}
+                  </span>
+                  <span className="flex-1 leading-relaxed">{option}</span>
+                  {extra}
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* نتيجة السؤال للاختيار من متعدد */}
+      {isMc && answeredTeam === 'pick' && (
+        <div className="animate-question-in bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-6 text-center">
+          <p className="font-bold text-emerald-800 mb-4">إجابة صحيحة! أي فريق سجل النقطة؟</p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => creditTeam(teamA.id)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-l from-brand-600 to-brand-500 text-white text-sm font-bold hover:from-brand-700 hover:to-brand-600 transition-all shadow shadow-brand-600/25 active:scale-95"
+            >
+              {teamA.name}
+            </button>
+            <button
+              onClick={() => creditTeam(teamB.id)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-l from-rose-600 to-rose-500 text-white text-sm font-bold hover:from-rose-700 hover:to-rose-600 transition-all shadow shadow-rose-600/25 active:scale-95"
+            >
+              {teamB.name}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* انتهى الوقت */}
+      {timeUp && answeredTeam !== 'pick' && (
+        <div className="animate-question-in bg-amber-50 border-2 border-amber-200 rounded-2xl p-5 text-center">
+          <p className="font-bold text-amber-800 mb-3">انتهى الوقت</p>
+          <button
+            onClick={handleAdvance}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 transition-colors"
+          >
+            السؤال التالي
+          </button>
+        </div>
+      )}
+
+      {/* زر تخطي للأسئلة النصية والاختيارية عند الحاجة */}
+      {!isMc && !answered && (
+        <p className="text-center text-sm text-slate-400">
+          عند إجابة الفريق إجابةً صحيحة، اضغط زر المنافس المقابل لإضافة نقطة والانتقال للسؤال التالي
+        </p>
       )}
     </div>
   )
 }
 
-function TeamPanel({ team, gradient, ring, accent, flash, onCorrect, disabled }) {
+function TimerBar({ seconds, duration }) {
+  const pct = Math.max(0, (seconds / Math.max(duration, 1)) * 100)
+  const low = seconds <= 10
+  const mid = seconds <= 30
+  const color = low
+    ? 'bg-gradient-to-l from-rose-500 to-rose-400'
+    : mid
+      ? 'bg-gradient-to-l from-amber-500 to-amber-400'
+      : 'bg-gradient-to-l from-brand-600 to-brand-400'
+
+  return (
+    <div
+      className={`bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-4 ${
+        low ? 'animate-pulse' : ''
+      }`}
+    >
+      <div
+        className={`w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center text-white font-black text-2xl tabular-nums shadow ${
+          low ? `bg-rose-500 ${seconds <= 5 ? 'animate-timer-critical' : 'animate-bounce'}` : mid ? 'bg-amber-500' : 'bg-brand-600'
+        }`}
+      >
+        {seconds}
+      </div>
+      <div className="flex-1">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs font-semibold text-slate-500">المؤقت</span>
+          <span className="text-xs text-slate-400">ثانية</span>
+        </div>
+        <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+          <div
+            key={seconds}
+            className={`h-full rounded-full transition-all duration-1000 ease-linear ${color}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TeamPanel({ team, gradient, ring, accent, flash, showJudge, onCorrect }) {
   const isFlash = flash && flash.teamId === team.id
   return (
     <div className="relative bg-white rounded-2xl border border-slate-200 p-6 text-center overflow-visible">
@@ -152,20 +346,17 @@ function TeamPanel({ team, gradient, ring, accent, flash, onCorrect, disabled })
       </p>
       <p className="text-xs text-slate-400 mt-0.5">نقطة</p>
 
-      <button
-        onClick={onCorrect}
-        disabled={disabled}
-        className={`mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-sm font-bold transition-colors ${
-          disabled
-            ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
-            : accent + ' active:scale-95'
-        }`}
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-        إجابة صحيحة
-      </button>
+      {showJudge && (
+        <button
+          onClick={onCorrect}
+          className={`mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-sm font-bold transition-colors ${accent} active:scale-95`}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          إجابة صحيحة
+        </button>
+      )}
     </div>
   )
 }
@@ -175,9 +366,9 @@ function RoundHeader({ bank, questionIndex, total, finished }) {
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-4">
         <Link
-          to="/challenges/setup"
+          to="/challenges"
           className="w-10 h-10 rounded-xl border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-slate-50 transition-colors"
-          aria-label="العودة لإعداد التحدي"
+          aria-label="العودة للتحدي"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -203,9 +394,9 @@ function MissingHeader() {
   return (
     <div className="flex items-center gap-4">
       <Link
-        to="/challenges/setup"
+        to="/challenges"
         className="w-10 h-10 rounded-xl border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-slate-50 transition-colors"
-        aria-label="العودة لإعداد التحدي"
+        aria-label="العودة للتحدي"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -221,7 +412,6 @@ function MissingHeader() {
 function ResultCard({ teamA, teamB, winner }) {
   return (
     <div className="animate-question-in bg-white rounded-2xl border border-slate-200 p-10 text-center relative overflow-hidden">
-      {/* قصاصات احتفالية */}
       <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center gap-3" aria-hidden="true">
         {confettiColors.map((c, i) => (
           <span
@@ -262,7 +452,7 @@ function ResultCard({ teamA, teamB, winner }) {
           العودة للتحدي
         </Link>
         <Link
-          to="/challenges/setup"
+          to="/challenges"
           className="inline-flex px-4 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 transition-colors shadow shadow-brand-600/25"
         >
           مواجهة جديدة

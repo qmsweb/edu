@@ -28,40 +28,49 @@ function truncate(name, max) {
   return name.length > max ? name.slice(0, max - 1) + '…' : name
 }
 
-const SpinningWheel = forwardRef(function SpinningWheel({ names, onSpinStart, onSettle }, ref) {
+const SpinningWheel = forwardRef(function SpinningWheel({ items, onSpinStart, onSettle }, ref) {
   const [rotation, setRotation] = useState(0)
   const [spinning, setSpinning] = useState(false)
-  const rotationRef = useRef(0)
 
-  rotationRef.current = rotation
+  const latest = useRef({ rotation: 0, spinning: false, items, onSpinStart, onSettle })
+  latest.current.rotation = rotation
+  latest.current.spinning = spinning
+  latest.current.items = items
+  latest.current.onSpinStart = onSpinStart
+  latest.current.onSettle = onSettle
 
   useImperativeHandle(
     ref,
     () => ({
       spin() {
-        if (spinning || names.length < 2) return
+        const current = latest.current
+        if (current.spinning || current.items.length < 2) return
         setSpinning(true)
-        if (onSpinStart) onSpinStart()
+        if (current.onSpinStart) current.onSpinStart()
 
-        const count = names.length
+        const count = current.items.length
         const slice = 360 / count
         const target = Math.floor(Math.random() * count)
         const deltaBase = (360 - (target + 0.5) * slice + 360) % 360
         const jitter = (Math.random() - 0.5) * (slice - 6)
-        const spins = 5 + Math.floor(Math.random() * 3)
+        const turns = 5 + Math.floor(Math.random() * 3)
 
-        setRotation(rotationRef.current + spins * 360 + deltaBase + jitter)
+        setRotation(current.rotation + turns * 360 + deltaBase + jitter)
 
         window.setTimeout(() => {
+          const onSettle = latest.current.onSettle
           setSpinning(false)
-          if (onSettle) onSettle(names[target])
+          if (onSettle) onSettle(latest.current.items[target])
         }, 4100)
       },
+      isSpinning() {
+        return latest.current.spinning
+      },
     }),
-    [spinning, names, onSpinStart, onSettle]
+    []
   )
 
-  const count = names.length
+  const count = items.length
   const slice = count > 0 ? 360 / count : 0
   const maxChars = Math.max(3, Math.floor((LABEL_RADIUS * 2 * Math.PI * slice) / 360 / 16))
 
@@ -72,8 +81,15 @@ const SpinningWheel = forwardRef(function SpinningWheel({ names, onSpinStart, on
         <circle cx={CENTER} cy={CENTER} r={RADIUS + 14} fill="#ffffff" stroke="#e2e8f0" strokeWidth="2" />
 
         {/* الفرصة الدوّارة */}
-        <g style={{ transform: `rotate(${rotation}deg)`, transformOrigin: '200px 200px', transition: spinning ? 'transform 4s cubic-bezier(0.16, 0.72, 0.17, 1)' : 'none' }}>
-          {names.map((name, i) => {
+        <g
+          style={{
+            transform: `rotate(${rotation}deg)`,
+            transformOrigin: '200px 200px',
+            transition: spinning ? 'transform 4s cubic-bezier(0.16, 0.72, 0.17, 1)' : 'none',
+          }}
+        >
+          {items.map((item, i) => {
+            const name = String(item.name ?? item)
             const a0 = -90 + i * slice
             const a1 = a0 + slice
             const mid = a0 + slice / 2
@@ -82,7 +98,7 @@ const SpinningWheel = forwardRef(function SpinningWheel({ names, onSpinStart, on
             const label = point(CENTER, CENTER, LABEL_RADIUS, mid)
             const bigArc = slice > 180 ? 1 : 0
             return (
-              <g key={i}>
+              <g key={item.id ?? i}>
                 <path
                   d={`M ${CENTER} ${CENTER} L ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${RADIUS} ${RADIUS} 0 ${bigArc} 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} Z`}
                   fill={sliceColors[i % sliceColors.length]}

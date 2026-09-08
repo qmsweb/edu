@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { loadTeams } from '../utils/storage.js'
 import { loadQuestionBanks } from '../utils/storage.js'
@@ -18,21 +18,21 @@ export default function ChallengeSetup() {
   const [spinning, setSpinning] = useState(false)
   const wheelRef = useRef(null)
 
-  const selectedIds = new Set(selected.map((t) => t.id))
-  const remaining = useMemo(() => teams.filter((t) => !selectedIds.has(t.id)), [teams, selected])
-  const availableBanks = useMemo(() => banks.filter((b) => (b.questions || []).length > 0), [banks])
   const selectedBank = banks.find((b) => b.id === bankId)
+  const ready = selected.length === 2 && bankId
 
-  function handleSettle(team) {
-    setSelected((prev) => (prev.length < 2 && !prev.some((t) => t.id === team.id) ? [...prev, team] : prev))
+  function handleSettle(firstTeam) {
+    setSpinning(false)
+    if (!firstTeam || !firstTeam.id) return
+    const pool = teams.filter((t) => t.id !== firstTeam.id)
+    const secondTeam = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null
+    setSelected(secondTeam ? [firstTeam, secondTeam] : [firstTeam])
   }
 
   function reset() {
     setSelected([])
     setSpinning(false)
   }
-
-  const ready = selected.length === 2 && bankId
 
   function start() {
     if (!ready) return
@@ -75,32 +75,28 @@ export default function ChallengeSetup() {
           <div className="text-center mb-5">
             <h3 className="font-bold text-slate-800 text-lg">عجلة الحظ</h3>
             <p className="text-sm text-slate-500 mt-1">
-              {selected.length === 0 && 'دوّر العجلة لاختيار الفريق الأول'}
-              {selected.length === 1 && 'رائع! دوّر الآن لاختيار الفريق الثاني'}
-              {selected.length === 2 && 'اكتمل اختيار الفريقين — اضغط "بدء المواجهة" بالأسفل'}
+              دوّر العجلة لاختيار الفريقين المتنافسين
             </p>
           </div>
 
           <SpinningWheel
             ref={wheelRef}
-            names={remaining.map((t) => t.name)}
+            items={teams}
             onSpinStart={() => setSpinning(true)}
             onSettle={handleSettle}
           />
 
           <div className="mt-6 flex items-center justify-center gap-3">
-            {selected.length < 2 && (
-              <button
-                onClick={() => wheelRef.current && wheelRef.current.spin()}
-                disabled={spinning || remaining.length < 1}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow shadow-brand-600/25"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                {spinning ? '... يتم التدوير' : 'تدوير'}
-              </button>
-            )}
+            <button
+              onClick={() => wheelRef.current && wheelRef.current.spin()}
+              disabled={spinning}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow shadow-brand-600/25"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {spinning ? '... يتم التدوير' : 'تدوير'}
+            </button>
             {selected.length > 0 && (
               <button
                 onClick={reset}
@@ -124,7 +120,7 @@ export default function ChallengeSetup() {
                       team ? '' : 'opacity-30'
                     }`}
                   >
-                    <span className="text-2xl font-bold">{team ? team.name.trim().charAt(0) : '؟'}</span>
+                    <span className="text-2xl font-bold">{team ? (team.name || '').trim().charAt(0) || '؟' : '؟'}</span>
                     {team && <span className="text-[10px] max-w-[80px] truncate">{team.name}</span>}
                   </div>
                   <div className="text-center">
@@ -204,7 +200,7 @@ export default function ChallengeSetup() {
           </button>
 
           <p className="text-xs text-slate-400 text-center leading-relaxed">
-            {!ready && 'اختر فريقين عبر العجلة ثم حدد بنك الأسئلة لتفعيل الزر'}
+            {!ready && 'دوّر العجلة وحدد بنك الأسئلة لتفعيل الزر'}
             {ready && 'سيتم نقلك إلى شاشة طرح الأسئلة'}
           </p>
         </div>

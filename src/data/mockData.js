@@ -85,4 +85,10 @@ export const mockSettingsProfile = {
   school: 'مدرسة النموذجية',
   subject: 'رياضيات',
   avatarColor: 'indigo',
+  accountType: 'مشترك', // 'مجاني' | 'مشترك'
+  usageLimit: {
+    used: 620,
+    total: 1000,
+    unit: 'سؤال',
+  },
 }

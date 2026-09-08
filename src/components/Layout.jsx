@@ -1,5 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { useState } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 
 const navItems = [
   {
@@ -43,6 +43,18 @@ const navItems = [
 
 export default function Layout() {
   const [open, setOpen] = useState(false)
+  const [sidebarVisible, setSidebarVisible] = useState(true)
+  const location = useLocation()
+
+  const isChallengeRound = location.pathname === '/challenges/round'
+
+  useEffect(() => {
+    if (isChallengeRound) {
+      setSidebarVisible(false)
+    }
+  }, [isChallengeRound])
+
+  const showSidebar = sidebarVisible && !isChallengeRound
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -56,7 +68,7 @@ export default function Layout() {
 
       <aside
         className={`fixed top-0 right-0 h-full w-64 bg-white border-l border-slate-200 shadow-lg transform transition-transform duration-300 z-30 flex flex-col
-          ${open ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}
+          ${open ? 'translate-x-0' : showSidebar ? 'translate-x-full lg:translate-x-0' : 'translate-x-full'}`}
       >
         {/* الشعار */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
@@ -105,18 +117,36 @@ export default function Layout() {
       </aside>
 
       {/* المحتوى */}
-      <div className="lg:mr-64">
+      <div className={`${showSidebar ? 'lg:mr-64' : ''} transition-all duration-300`}>
         {/* الشريط العلوي */}
         <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 py-3">
-          <button
-            onClick={() => setOpen(true)}
-            className="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-600"
-            aria-label="فتح القائمة"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setOpen(true)}
+              className="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-600"
+              aria-label="فتح القائمة"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setSidebarVisible((v) => !v)}
+              className="hidden lg:flex p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
+              aria-label={showSidebar ? 'إخفاء الشريط الجانبي' : 'إظهار الشريط الجانبي'}
+              title={showSidebar ? 'إخفاء الشريط الجانبي' : 'إظهار الشريط الجانبي'}
+            >
+              {showSidebar ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              )}
+            </button>
+          </div>
 
           <div className="hidden lg:flex items-center gap-2 text-sm text-slate-500">
             <span className="font-medium text-slate-700">أهلاً بعودتك 👋</span>

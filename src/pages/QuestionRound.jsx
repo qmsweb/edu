@@ -278,36 +278,56 @@ function TimerBar({ seconds, duration }) {
   const pct = Math.max(0, (seconds / Math.max(duration, 1)) * 100)
   const low = seconds <= 10
   const mid = seconds <= 30
-  const color = low
-    ? 'bg-gradient-to-l from-rose-500 to-rose-400'
+  const radius = 38
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (pct / 100) * circumference
+
+  const strokeColor = low
+    ? '#f43f5e'
     : mid
-      ? 'bg-gradient-to-l from-amber-500 to-amber-400'
-      : 'bg-gradient-to-l from-brand-600 to-brand-400'
+      ? '#f59e0b'
+      : '#6366f1'
+
+  const bgColor = low ? '#fff1f2' : mid ? '#fffbeb' : '#eef2ff'
 
   return (
-    <div
-      className={`bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-4 ${
-        low ? 'animate-pulse' : ''
-      }`}
-    >
+    <div className="fixed left-6 bottom-6 z-50" dir="ltr">
       <div
-        className={`w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center text-white font-black text-2xl tabular-nums shadow ${
-          low ? `bg-rose-500 ${seconds <= 5 ? 'animate-timer-critical' : 'animate-bounce'}` : mid ? 'bg-amber-500' : 'bg-brand-600'
-        }`}
+        className={`relative w-28 h-28 rounded-full bg-white shadow-2xl border-2 flex items-center justify-center ${
+          low ? 'animate-pulse border-rose-300' : mid ? 'border-amber-300' : 'border-indigo-300'
+        } ${low && seconds <= 5 ? 'animate-timer-critical' : ''}`}
       >
-        {seconds}
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs font-semibold text-slate-500">المؤقت</span>
-          <span className="text-xs text-slate-400">ثانية</span>
-        </div>
-        <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
-          <div
-            key={seconds}
-            className={`h-full rounded-full transition-all duration-1000 ease-linear ${color}`}
-            style={{ width: `${pct}%` }}
+        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 96 96">
+          <circle
+            cx="48"
+            cy="48"
+            r={radius}
+            fill="none"
+            stroke={bgColor}
+            strokeWidth="5"
           />
+          <circle
+            cx="48"
+            cy="48"
+            r={radius}
+            fill="none"
+            stroke={strokeColor}
+            strokeWidth="5"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease' }}
+          />
+        </svg>
+        <div className="flex flex-col items-center justify-center">
+          <span
+            className={`text-3xl font-black tabular-nums leading-none ${
+              low ? 'text-rose-600' : mid ? 'text-amber-600' : 'text-indigo-600'
+            }`}
+          >
+            {seconds}
+          </span>
+          <span className="text-[10px] font-semibold text-slate-400 mt-1">ثانية</span>
         </div>
       </div>
     </div>

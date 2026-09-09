@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   loadTeams,
@@ -28,9 +28,15 @@ export default function QuestionRound() {
   const [scoreFlash, setScoreFlash] = useState(null)
   const [duration] = useState(() => passedDuration || loadTimerDuration() || 60)
   const [timer, setTimer] = useState(duration)
-  const [answeredTeam, setAnsweredTeam] = useState(null)
   const [wrongPick, setWrongPick] = useState(null)
   const [resultSaved, setResultSaved] = useState(false)
+  const [phase, setPhase] = useState('active')
+
+  const firstTeamRef = useRef(null)
+  if (firstTeamRef.current === null) {
+    firstTeamRef.current = Math.random() < 0.5 ? teamAId : teamBId
+  }
+  const firstTeamId = firstTeamRef.current
 
   const banks = loadQuestionBanks()
   const teamA = teams.find((t) => t.id === teamAId)
@@ -43,20 +49,30 @@ export default function QuestionRound() {
   const finished = !current
   const isMc = !!current && current.type === 'mc' && Array.isArray(current.options)
   const timeUp = !finished && timer <= 0
-  const answered = !finished && (timeUp || !!answeredTeam)
 
-  const winner = finished && teamA && teamB
-    ? teamA.points === teamB.points
-      ? null
-      : teamA.points > teamB.points
-        ? teamA
-        : teamB
-    : null
+  const turnTeamId = finished
+    ? null
+    : questionIndex % 2 === 0
+      ? firstTeamId
+      : firstTeamId === teamAId
+        ? teamBId
+        : teamAId
+  const otherTeamId = turnTeamId === teamAId ? teamBId : teamAId
+  const turnTeam = teams.find((t) => t.id === turnTeamId)
+  const otherTeam = teams.find((t) => t.id === otherTeamId)
+
+  const winner =
+    finished && teamA && teamB
+      ? teamA.points === teamB.points
+        ? null
+        : teamA.points > teamB.points
+          ? teamA
+          : teamB
+      : null
 
   useEffect(() => {
     function check() {
-      const isMobile = window.innerWidth < 768
-      if (isMobile) setIsLandscape(getIsLandscape())
+      if (window.innerWidth < 768) setIsLandscape(getIsLandscape())
     }
     window.addEventListener('orientationchange', check)
     window.addEventListener('resize', check)
@@ -69,16 +85,21 @@ export default function QuestionRound() {
   useEffect(() => {
     if (finished) return
     setTimer(duration)
-    setAnsweredTeam(null)
     setWrongPick(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [questionIndex, finished])
+    setPhase('active')
+  }, [questionIndex, finished, duration])
 
   useEffect(() => {
-    if (finished || answered) return
+    if (finished || phase !== 'active' || timeUp) return
     const id = window.setTimeout(() => setTimer((t) => t - 1), 1000)
     return () => window.clearTimeout(id)
-  }, [timer, finished, answered])
+  }, [timer, finished, phase, timeUp])
+
+  useEffect(() => {
+    if (!finished && timeUp && phase === 'active') {
+      setPhase('timeUp')
+    }
+  }, [timeUp, finished, phase])
 
   useEffect(() => {
     if (!finished || resultSaved || !teamA || !teamB || !bank) return
@@ -91,7 +112,6 @@ export default function QuestionRound() {
       winner: winner ? winner.name : null,
       bankTitle: bank.title,
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finished, resultSaved, teamA, teamB, bank, winner])
 
   function creditTeam(teamId) {
@@ -106,9 +126,9 @@ export default function QuestionRound() {
   }
 
   function handleMcPick(index) {
-    if (finished || answered || !isMc) return
+    if (finished || phase === 'timeUp' || !isMc) return
     if (index === current.correctIndex) {
-      setAnsweredTeam('pick') // فتح شاشة اختيار الفريق
+      creditTeam(phase === 'otherChance' ? otherTeamId : turnTeamId)
     } else {
       setWrongPick(index)
       window.setTimeout(() => setWrongPick(null), 900)
@@ -117,6 +137,21 @@ export default function QuestionRound() {
 
   function handleAdvance() {
     setQuestionIndex((i) => i + 1)
+  }
+
+  function getTeamHighlight(teamId) {
+    if (phase === 'active' && teamId === turnTeamId) {
+      return teamId === teamAId ? 'brand' : 'rose'
+    }
+    if (phase === 'otherChance' && teamId === otherTeamId) return 'amber'
+    return null
+  }
+
+  function isTeamDimmed(teamId) {
+    if (phase === 'timeUp') return false
+    if (phase === 'active' && teamId === turnTeamId) return false
+    if (phase === 'otherChance' && teamId === otherTeamId) return false
+    return true
   }
 
   if (!teamA || !teamB || !bank) {
@@ -155,7 +190,7 @@ export default function QuestionRound() {
 
   if (finished) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-3xl mx-auto">
         <RoundHeader finished bank={bank} questionIndex={questionIndex} total={total} />
         <ResultCard teamA={teamA} teamB={teamB} winner={winner} />
       </div>
@@ -163,35 +198,57 @@ export default function QuestionRound() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 max-w-4xl mx-auto">
       <RoundHeader bank={bank} questionIndex={questionIndex} total={total} />
 
-      {/* المؤقت */}
-      <TimerBar seconds={timer} duration={duration} />
+      <div
+        key={`turn-${questionIndex}-${phase}`}
+        className={`animate-question-in flex items-center justify-center gap-3 py-3 rounded-2xl text-white shadow-lg ${
+          phase === 'timeUp' || phase === 'otherChance'
+            ? 'bg-gradient-to-l from-amber-500 to-amber-400'
+            : turnTeamId === teamAId
+              ? 'bg-gradient-to-l from-brand-600 to-brand-500'
+              : 'bg-gradient-to-l from-rose-600 to-rose-500'
+        }`}
+      >
+        {phase === 'otherChance' ? (
+          <>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-bold">دور {otherTeam?.name} للإجابة — بدون مؤقت</span>
+          </>
+        ) : (
+          <span className="font-bold">دور: {turnTeam?.name}</span>
+        )}
+      </div>
 
-      {/* فريقا المواجهة */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-        <TeamPanel
+      <div className="grid grid-cols-2 gap-4">
+        <TeamCard
           team={teamA}
+          isDimmed={isTeamDimmed(teamA.id)}
+          highlightColor={getTeamHighlight(teamA.id)}
           gradient="from-brand-600 to-brand-500"
           ring="ring-brand-300"
           accent="text-brand-700 bg-brand-50 border-brand-200 hover:bg-brand-100"
           flash={scoreFlash}
-          showJudge={!isMc && !finished && !answered}
+          showJudge={!isMc && ((phase === 'active' && turnTeamId === teamA.id) || (phase === 'otherChance' && otherTeamId === teamA.id))}
           onCorrect={() => creditTeam(teamA.id)}
         />
-        <TeamPanel
+        <TeamCard
           team={teamB}
+          isDimmed={isTeamDimmed(teamB.id)}
+          highlightColor={getTeamHighlight(teamB.id)}
           gradient="from-rose-600 to-rose-500"
           ring="ring-rose-300"
           accent="text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100"
           flash={scoreFlash}
-          showJudge={!isMc && !finished && !answered}
+          showJudge={!isMc && ((phase === 'active' && turnTeamId === teamB.id) || (phase === 'otherChance' && otherTeamId === teamB.id))}
           onCorrect={() => creditTeam(teamB.id)}
         />
       </div>
 
-      <div key={current.id} className="animate-question-in bg-white rounded-2xl border border-slate-200 p-8 sm:p-10 text-center">
+      <div key={current.id} className="animate-question-in bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 text-center">
         <div className="flex items-center justify-center gap-2 mb-4">
           <span className="text-xs font-bold text-brand-600 bg-brand-50 rounded-full px-3 py-1">
             السؤال {questionIndex + 1} من {total}
@@ -210,166 +267,143 @@ export default function QuestionRound() {
           {current.text}
         </p>
 
-        {isMc && (
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
-            {current.options.map((option, i) => {
-              let cls = 'border-slate-200 hover:border-brand-400 hover:bg-brand-50 text-slate-700'
-              let extra = null
-              if (answered) {
-                if (i === current.correctIndex) {
-                  cls = 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                  extra = (
-                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )
-                } else if (i === wrongPick) {
-                  cls = 'border-rose-400 bg-rose-50 text-rose-700'
-                  extra = (
-                    <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  )
-                } else {
-                  cls = 'border-slate-200 bg-slate-50 text-slate-400'
-                }
-              } else if (wrongPick === i) {
-                cls = 'border-rose-400 bg-rose-50 text-rose-700 animate-shake'
-                extra = (
-                  <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                )
-              }
-              return (
-                <button
-                  key={i}
-                  onClick={() => handleMcPick(i)}
-                  disabled={answered}
-                  className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-start text-sm font-semibold transition-all active:scale-[0.98] ${cls} ${
-                    answered ? 'cursor-default' : 'cursor-pointer'
-                  }`}
-                >
-                  <span className="w-8 h-8 shrink-0 rounded-full bg-white border border-current flex items-center justify-center text-xs font-black">
-                    {String.fromCharCode(65 + i)}
-                  </span>
-                  <span className="flex-1 leading-relaxed">{option}</span>
-                  {extra}
-                </button>
-              )
-            })}
+        {phase === 'active' && (
+          <div className="mt-5 flex justify-center">
+            <TimerCircle seconds={timer} duration={duration} />
           </div>
         )}
       </div>
 
-      {/* نتيجة السؤال للاختيار من متعدد */}
-      {isMc && answeredTeam === 'pick' && (
-        <div className="animate-question-in bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-6 text-center">
-          <p className="font-bold text-emerald-800 mb-4">إجابة صحيحة! أي فريق سجل النقطة؟</p>
+      {isMc && (
+        <div className="animate-question-in grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
+          {current.options.map((option, i) => {
+            let cls = 'border-slate-200 hover:border-brand-400 hover:bg-brand-50 text-slate-700'
+            let extra = null
+            if (wrongPick === i) {
+              cls = 'border-rose-400 bg-rose-50 text-rose-700 animate-shake'
+              extra = (
+                <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )
+            }
+            return (
+              <button
+                key={i}
+                onClick={() => handleMcPick(i)}
+                disabled={phase === 'timeUp'}
+                className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-start text-sm font-semibold transition-all active:scale-[0.98] ${cls} ${
+                  phase === 'timeUp' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                }`}
+              >
+                <span className="w-8 h-8 shrink-0 rounded-full bg-white border border-current flex items-center justify-center text-xs font-black">
+                  {String.fromCharCode(65 + i)}
+                </span>
+                <span className="flex-1 leading-relaxed">{option}</span>
+                {extra}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {phase === 'timeUp' && (
+        <div className="animate-question-in bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 text-center space-y-3">
+          <div className="w-12 h-12 mx-auto rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="font-bold text-amber-800">انتهى الوقت!</p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
-              onClick={() => creditTeam(teamA.id)}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-l from-brand-600 to-brand-500 text-white text-sm font-bold hover:from-brand-700 hover:to-brand-600 transition-all shadow shadow-brand-600/25 active:scale-95"
+              onClick={() => setPhase('otherChance')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-l from-brand-600 to-brand-500 text-white text-sm font-bold hover:from-brand-700 hover:to-brand-600 transition-all shadow"
             >
-              {teamA.name}
+              أعطِ {otherTeam?.name} فرصة للإجابة
             </button>
             <button
-              onClick={() => creditTeam(teamB.id)}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-l from-rose-600 to-rose-500 text-white text-sm font-bold hover:from-rose-700 hover:to-rose-600 transition-all shadow shadow-rose-600/25 active:scale-95"
+              onClick={handleAdvance}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors"
             >
-              {teamB.name}
+              السؤال التالي
             </button>
           </div>
         </div>
       )}
 
-      {/* انتهى الوقت */}
-      {timeUp && answeredTeam !== 'pick' && (
-        <div className="animate-question-in bg-amber-50 border-2 border-amber-200 rounded-2xl p-5 text-center">
-          <p className="font-bold text-amber-800 mb-3">انتهى الوقت</p>
+      {phase === 'otherChance' && (
+        <div className="text-center">
           <button
             onClick={handleAdvance}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-500 text-sm font-semibold hover:bg-slate-50 transition-colors"
           >
-            السؤال التالي
+            تخطي والسؤال التالي
           </button>
         </div>
       )}
 
-      {/* زر تخطي للأسئلة النصية والاختيارية عند الحاجة */}
-      {!isMc && !answered && (
+      {!isMc && (phase === 'active' || phase === 'otherChance') && (
         <p className="text-center text-sm text-slate-400">
-          عند إجابة الفريق إجابةً صحيحة، اضغط زر المنافس المقابل لإضافة نقطة والانتقال للسؤال التالي
+          اضغط زر "إجابة صحيحة" على بطاقة الفريق عند الإجابة الصحيحة
         </p>
       )}
     </div>
   )
 }
 
-function TimerBar({ seconds, duration }) {
+function TimerCircle({ seconds, duration }) {
   const pct = Math.max(0, (seconds / Math.max(duration, 1)) * 100)
   const low = seconds <= 10
   const mid = seconds <= 30
-  const radius = 38
+  const radius = 28
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (pct / 100) * circumference
 
-  const strokeColor = low
-    ? '#f43f5e'
-    : mid
-      ? '#f59e0b'
-      : '#6366f1'
-
+  const strokeColor = low ? '#f43f5e' : mid ? '#f59e0b' : '#6366f1'
   const bgColor = low ? '#fff1f2' : mid ? '#fffbeb' : '#eef2ff'
 
   return (
-    <div className="fixed left-6 bottom-6 z-50" dir="ltr">
-      <div
-        className={`relative w-28 h-28 rounded-full bg-white shadow-2xl border-2 flex items-center justify-center ${
-          low ? 'animate-pulse border-rose-300' : mid ? 'border-amber-300' : 'border-indigo-300'
-        } ${low && seconds <= 5 ? 'animate-timer-critical' : ''}`}
-      >
-        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 96 96">
-          <circle
-            cx="48"
-            cy="48"
-            r={radius}
-            fill="none"
-            stroke={bgColor}
-            strokeWidth="5"
-          />
-          <circle
-            cx="48"
-            cy="48"
-            r={radius}
-            fill="none"
-            stroke={strokeColor}
-            strokeWidth="5"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease' }}
-          />
-        </svg>
-        <div className="flex flex-col items-center justify-center">
-          <span
-            className={`text-3xl font-black tabular-nums leading-none ${
-              low ? 'text-rose-600' : mid ? 'text-amber-600' : 'text-indigo-600'
-            }`}
-          >
-            {seconds}
-          </span>
-          <span className="text-[10px] font-semibold text-slate-400 mt-1">ثانية</span>
-        </div>
+    <div className={`relative w-20 h-20 rounded-full bg-white shadow-lg border-2 flex items-center justify-center ${
+      low ? 'animate-pulse border-rose-300' : mid ? 'border-amber-300' : 'border-indigo-300'
+    } ${low && seconds <= 5 ? 'animate-timer-critical' : ''}`}>
+      <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r={radius} fill="none" stroke={bgColor} strokeWidth="4" />
+        <circle
+          cx="32" cy="32" r={radius} fill="none"
+          stroke={strokeColor} strokeWidth="4" strokeLinecap="round"
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease' }}
+        />
+      </svg>
+      <div className="flex flex-col items-center justify-center">
+        <span className={`text-xl font-black tabular-nums leading-none ${
+          low ? 'text-rose-600' : mid ? 'text-amber-600' : 'text-indigo-600'
+        }`}>
+          {seconds}
+        </span>
+        <span className="text-[9px] font-semibold text-slate-400 mt-0.5">ثانية</span>
       </div>
     </div>
   )
 }
 
-function TeamPanel({ team, gradient, ring, accent, flash, showJudge, onCorrect }) {
+function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flash, showJudge, onCorrect }) {
   const isFlash = flash && flash.teamId === team.id
+
+  let borderClass = 'border-slate-200'
+  if (highlightColor === 'amber') {
+    borderClass = 'border-amber-400 ring-2 ring-amber-200 shadow-lg'
+  } else if (highlightColor === 'brand') {
+    borderClass = 'border-brand-400 ring-2 ring-brand-300 shadow-lg'
+  } else if (highlightColor === 'rose') {
+    borderClass = 'border-rose-400 ring-2 ring-rose-300 shadow-lg'
+  }
+
   return (
-    <div className="relative bg-white rounded-2xl border border-slate-200 p-6 text-center overflow-visible">
+    <div className={`relative bg-white rounded-2xl border p-5 text-center overflow-visible transition-all duration-300 ${
+      isDimmed ? 'opacity-40' : ''
+    } ${borderClass}`}>
       {isFlash && (
         <div key={flash.nonce} className="pointer-events-none">
           <span className="animate-float-up absolute top-8 right-1/2 translate-x-1/2 text-3xl font-black text-amber-500">
@@ -378,10 +412,10 @@ function TeamPanel({ team, gradient, ring, accent, flash, showJudge, onCorrect }
         </div>
       )}
 
-      <div className="flex items-center justify-center mb-3">
+      <div className="flex items-center justify-center mb-2">
         <div
           key={`avatar-${flash?.nonce}`}
-          className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center text-3xl font-bold shadow-lg ${
+          className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center text-2xl font-bold shadow-lg ${
             isFlash ? 'animate-ring-pulse ring-4 ' + ring : ''
           }`}
         >
@@ -389,10 +423,10 @@ function TeamPanel({ team, gradient, ring, accent, flash, showJudge, onCorrect }
         </div>
       </div>
 
-      <p className="font-bold text-slate-800 truncate">{team.name}</p>
+      <p className="font-bold text-slate-800 truncate text-sm">{team.name}</p>
       <p
         key={`score-${flash?.nonce}`}
-        className={`text-4xl font-black text-slate-800 tabular-nums mt-2 ${isFlash ? 'animate-score-pop' : ''}`}
+        className={`text-3xl font-black text-slate-800 tabular-nums mt-1 ${isFlash ? 'animate-score-pop' : ''}`}
       >
         {team.points}
       </p>
@@ -401,9 +435,9 @@ function TeamPanel({ team, gradient, ring, accent, flash, showJudge, onCorrect }
       {showJudge && (
         <button
           onClick={onCorrect}
-          className={`mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-sm font-bold transition-colors ${accent} active:scale-95`}
+          className={`mt-3 w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-bold transition-colors ${accent} active:scale-95`}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
           إجابة صحيحة

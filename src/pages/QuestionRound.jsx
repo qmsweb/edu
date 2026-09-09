@@ -131,7 +131,12 @@ export default function QuestionRound() {
       creditTeam(phase === 'otherChance' ? otherTeamId : turnTeamId)
     } else {
       setWrongPick(index)
-      window.setTimeout(() => setWrongPick(null), 900)
+      window.setTimeout(() => {
+        setWrongPick(null)
+        if (phase === 'active') {
+          setPhase('otherChance')
+        }
+      }, 900)
     }
   }
 
@@ -223,7 +228,7 @@ export default function QuestionRound() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-[290px_minmax(0,1fr)_290px] xl:grid-cols-[320px_minmax(0,1fr)_320px] gap-3 sm:gap-4 lg:flex-1 lg:items-stretch">
+      <div className="grid grid-cols-2 lg:grid-cols-[220px_minmax(0,1fr)_220px] xl:grid-cols-[240px_minmax(0,1fr)_240px] gap-3 sm:gap-4 lg:flex-1 lg:items-stretch">
         <TeamCard
           team={teamA}
           isDimmed={isTeamDimmed(teamA.id)}
@@ -265,7 +270,7 @@ export default function QuestionRound() {
             </span>
           )}
         </div>
-        <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-800 leading-relaxed max-w-3xl mx-auto">
+        <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-800 leading-relaxed max-w-4xl mx-auto">
           {current.text}
         </p>
 
@@ -277,7 +282,7 @@ export default function QuestionRound() {
       </div>
 
       {isMc && (
-        <div className="animate-question-in grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl mx-auto w-full">
+        <div className="animate-question-in grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-4xl mx-auto w-full">
           {current.options.map((option, i) => {
             let cls = 'border-slate-200 hover:border-brand-400 hover:bg-brand-50 text-slate-700'
             let extra = null
@@ -405,7 +410,7 @@ function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flas
   }
 
   return (
-    <div className={`relative bg-white rounded-2xl border p-5 text-center overflow-visible transition-all duration-300 ${
+    <div className={`relative bg-white rounded-2xl border p-4 text-center overflow-visible transition-all duration-300 ${
       isDimmed ? 'opacity-40' : ''
     } ${borderClass} ${className} flex flex-col justify-center h-full`}>
       {isFlash && (
@@ -419,7 +424,7 @@ function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flas
       <div className="flex items-center justify-center mb-2">
         <div
           key={`avatar-${flash?.nonce}`}
-          className={`w-16 h-16 lg:w-24 lg:h-24 rounded-2xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center text-2xl lg:text-4xl font-bold shadow-lg ${
+          className={`w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center text-xl lg:text-2xl font-bold shadow-lg ${
             isFlash ? 'animate-ring-pulse ring-4 ' + ring : ''
           }`}
         >
@@ -427,10 +432,10 @@ function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flas
         </div>
       </div>
 
-      <p className="font-bold text-slate-800 truncate text-sm lg:text-xl">{team.name}</p>
+      <p className="font-bold text-slate-800 truncate text-sm lg:text-lg">{team.name}</p>
       <p
         key={`score-${flash?.nonce}`}
-        className={`text-3xl lg:text-5xl font-black text-slate-800 tabular-nums mt-1 ${isFlash ? 'animate-score-pop' : ''}`}
+        className={`text-3xl lg:text-4xl font-black text-slate-800 tabular-nums mt-1 ${isFlash ? 'animate-score-pop' : ''}`}
       >
         {team.points}
       </p>
@@ -439,7 +444,7 @@ function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flas
       {showJudge && (
         <button
           onClick={onCorrect}
-          className={`mt-4 w-full inline-flex items-center justify-center gap-2 px-3 py-3 rounded-xl border text-sm lg:text-base font-bold transition-colors ${accent} active:scale-95`}
+          className={`mt-3 w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border text-xs lg:text-sm font-bold transition-colors ${accent} active:scale-95`}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

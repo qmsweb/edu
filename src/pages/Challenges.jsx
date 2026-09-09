@@ -42,8 +42,11 @@ export default function Challenges() {
   }
 
   function autoSelect() {
+    if (teams.length < 2) return
     const shuffled = [...teams].sort(() => Math.random() - 0.5)
-    setSelected([shuffled[0], shuffled[1]])
+    const next = [shuffled[0], shuffled[1]]
+    setSelected(next)
+    setPickSlot(next.length)
   }
 
   function reset() {
@@ -107,7 +110,7 @@ export default function Challenges() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_380px] gap-6 items-start">
           {/* اختيار الفرق */}
           <div className="lg:col-span-2 space-y-5">
             <div className="flex items-center justify-between">
@@ -183,7 +186,7 @@ export default function Challenges() {
             </div>
 
             {/* شبكة الفرق */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
               {teams.map((team) => {
                 const isSelected = selected.some((s) => s.id === team.id)
                 const activeSlot = selected.findIndex((s) => s.id === team.id)
@@ -217,7 +220,7 @@ export default function Challenges() {
           </div>
 
           {/* الإعدادات */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:sticky lg:top-24">
             <div>
               <h3 className="font-bold text-slate-800">إعداد المواجهة</h3>
               <p className="text-sm text-slate-500 mt-0.5">اختر بنك الأسئلة ومدة المؤقت</p>

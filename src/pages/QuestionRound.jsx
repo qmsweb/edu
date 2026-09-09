@@ -198,12 +198,12 @@ export default function QuestionRound() {
   }
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
+    <div className="space-y-4 max-w-4xl lg:max-w-[1500px] mx-auto lg:flex lg:flex-col lg:min-h-[calc(100vh-9rem)]">
       <RoundHeader bank={bank} questionIndex={questionIndex} total={total} />
 
       <div
         key={`turn-${questionIndex}-${phase}`}
-        className={`animate-question-in flex items-center justify-center gap-3 py-3 rounded-2xl text-white shadow-lg ${
+        className={`animate-question-in flex items-center justify-center gap-3 px-4 py-3 rounded-2xl text-white shadow-lg ${
           phase === 'timeUp' || phase === 'otherChance'
             ? 'bg-gradient-to-l from-amber-500 to-amber-400'
             : turnTeamId === teamAId
@@ -223,7 +223,7 @@ export default function QuestionRound() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-[290px_minmax(0,1fr)_290px] xl:grid-cols-[320px_minmax(0,1fr)_320px] gap-3 sm:gap-4 lg:flex-1 lg:items-stretch">
         <TeamCard
           team={teamA}
           isDimmed={isTeamDimmed(teamA.id)}
@@ -234,6 +234,7 @@ export default function QuestionRound() {
           flash={scoreFlash}
           showJudge={!isMc && ((phase === 'active' && turnTeamId === teamA.id) || (phase === 'otherChance' && otherTeamId === teamA.id))}
           onCorrect={() => creditTeam(teamA.id)}
+          className="lg:col-start-1 lg:row-start-1"
         />
         <TeamCard
           team={teamB}
@@ -245,8 +246,9 @@ export default function QuestionRound() {
           flash={scoreFlash}
           showJudge={!isMc && ((phase === 'active' && turnTeamId === teamB.id) || (phase === 'otherChance' && otherTeamId === teamB.id))}
           onCorrect={() => creditTeam(teamB.id)}
+          className="lg:col-start-3 lg:row-start-1"
         />
-      </div>
+        <div className="col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 flex flex-col gap-4 lg:justify-center">
 
       <div key={current.id} className="animate-question-in bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 text-center">
         <div className="flex items-center justify-center gap-2 mb-4">
@@ -263,7 +265,7 @@ export default function QuestionRound() {
             </span>
           )}
         </div>
-        <p className="text-xl sm:text-2xl font-bold text-slate-800 leading-relaxed max-w-2xl mx-auto">
+        <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-800 leading-relaxed max-w-3xl mx-auto">
           {current.text}
         </p>
 
@@ -275,7 +277,7 @@ export default function QuestionRound() {
       </div>
 
       {isMc && (
-        <div className="animate-question-in grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
+        <div className="animate-question-in grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl mx-auto w-full">
           {current.options.map((option, i) => {
             let cls = 'border-slate-200 hover:border-brand-400 hover:bg-brand-50 text-slate-700'
             let extra = null
@@ -348,6 +350,8 @@ export default function QuestionRound() {
           اضغط زر "إجابة صحيحة" على بطاقة الفريق عند الإجابة الصحيحة
         </p>
       )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -388,7 +392,7 @@ function TimerCircle({ seconds, duration }) {
   )
 }
 
-function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flash, showJudge, onCorrect }) {
+function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flash, showJudge, onCorrect, className = '' }) {
   const isFlash = flash && flash.teamId === team.id
 
   let borderClass = 'border-slate-200'
@@ -403,7 +407,7 @@ function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flas
   return (
     <div className={`relative bg-white rounded-2xl border p-5 text-center overflow-visible transition-all duration-300 ${
       isDimmed ? 'opacity-40' : ''
-    } ${borderClass}`}>
+    } ${borderClass} ${className} flex flex-col justify-center h-full`}>
       {isFlash && (
         <div key={flash.nonce} className="pointer-events-none">
           <span className="animate-float-up absolute top-8 right-1/2 translate-x-1/2 text-3xl font-black text-amber-500">
@@ -415,7 +419,7 @@ function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flas
       <div className="flex items-center justify-center mb-2">
         <div
           key={`avatar-${flash?.nonce}`}
-          className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center text-2xl font-bold shadow-lg ${
+          className={`w-16 h-16 lg:w-24 lg:h-24 rounded-2xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center text-2xl lg:text-4xl font-bold shadow-lg ${
             isFlash ? 'animate-ring-pulse ring-4 ' + ring : ''
           }`}
         >
@@ -423,10 +427,10 @@ function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flas
         </div>
       </div>
 
-      <p className="font-bold text-slate-800 truncate text-sm">{team.name}</p>
+      <p className="font-bold text-slate-800 truncate text-sm lg:text-xl">{team.name}</p>
       <p
         key={`score-${flash?.nonce}`}
-        className={`text-3xl font-black text-slate-800 tabular-nums mt-1 ${isFlash ? 'animate-score-pop' : ''}`}
+        className={`text-3xl lg:text-5xl font-black text-slate-800 tabular-nums mt-1 ${isFlash ? 'animate-score-pop' : ''}`}
       >
         {team.points}
       </p>
@@ -435,7 +439,7 @@ function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flas
       {showJudge && (
         <button
           onClick={onCorrect}
-          className={`mt-3 w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-bold transition-colors ${accent} active:scale-95`}
+          className={`mt-4 w-full inline-flex items-center justify-center gap-2 px-3 py-3 rounded-xl border text-sm lg:text-base font-bold transition-colors ${accent} active:scale-95`}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

@@ -195,7 +195,7 @@ export default function QuestionRound() {
 
   if (finished) {
     return (
-      <div className="space-y-6 max-w-3xl mx-auto">
+      <div className="space-y-6 max-w-3xl lg:max-w-5xl mx-auto">
         <RoundHeader finished bank={bank} questionIndex={questionIndex} total={total} />
         <ResultCard teamA={teamA} teamB={teamB} winner={winner} />
       </div>
@@ -203,86 +203,95 @@ export default function QuestionRound() {
   }
 
   return (
-    <div className="space-y-4 max-w-4xl lg:max-w-[1500px] mx-auto lg:flex lg:flex-col lg:min-h-[calc(100vh-9rem)]">
-      <RoundHeader bank={bank} questionIndex={questionIndex} total={total} />
+    <div className="relative min-h-[calc(100vh-2rem)] lg:min-h-screen">
+      {phase === 'active' && (
+        <div className="hidden lg:flex fixed top-5 left-5 z-50 animate-question-in">
+          <TimerCircle seconds={timer} duration={duration} large />
+        </div>
+      )}
 
-      <div
-        key={`turn-${questionIndex}-${phase}`}
-        className={`animate-question-in flex items-center justify-center gap-3 px-4 py-3 rounded-2xl text-white shadow-lg ${
-          phase === 'timeUp' || phase === 'otherChance'
-            ? 'bg-gradient-to-l from-amber-500 to-amber-400'
-            : turnTeamId === teamAId
-              ? 'bg-gradient-to-l from-brand-600 to-brand-500'
-              : 'bg-gradient-to-l from-rose-600 to-rose-500'
-        }`}
-      >
-        {phase === 'otherChance' ? (
-          <>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="font-bold">دور {otherTeam?.name} للإجابة — بدون مؤقت</span>
-          </>
-        ) : (
-          <span className="font-bold">دور: {turnTeam?.name}</span>
-        )}
-      </div>
+      <div className="space-y-4 max-w-4xl lg:max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-8 xl:px-12">
+        <div className="lg:pl-36 xl:pl-40">
+          <RoundHeader bank={bank} questionIndex={questionIndex} total={total} />
+        </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-[220px_minmax(0,1fr)_220px] xl:grid-cols-[240px_minmax(0,1fr)_240px] gap-3 sm:gap-4 lg:flex-1 lg:items-stretch">
-        <TeamCard
-          team={teamA}
-          isDimmed={isTeamDimmed(teamA.id)}
-          highlightColor={getTeamHighlight(teamA.id)}
-          gradient="from-brand-600 to-brand-500"
-          ring="ring-brand-300"
-          accent="text-brand-700 bg-brand-50 border-brand-200 hover:bg-brand-100"
-          flash={scoreFlash}
-          showJudge={!isMc && ((phase === 'active' && turnTeamId === teamA.id) || (phase === 'otherChance' && otherTeamId === teamA.id))}
-          onCorrect={() => creditTeam(teamA.id)}
-          className="lg:col-start-1 lg:row-start-1"
-        />
-        <TeamCard
-          team={teamB}
-          isDimmed={isTeamDimmed(teamB.id)}
-          highlightColor={getTeamHighlight(teamB.id)}
-          gradient="from-rose-600 to-rose-500"
-          ring="ring-rose-300"
-          accent="text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100"
-          flash={scoreFlash}
-          showJudge={!isMc && ((phase === 'active' && turnTeamId === teamB.id) || (phase === 'otherChance' && otherTeamId === teamB.id))}
-          onCorrect={() => creditTeam(teamB.id)}
-          className="lg:col-start-3 lg:row-start-1"
-        />
-        <div className="col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 flex flex-col gap-4 lg:justify-center">
+        <div
+          key={`turn-${questionIndex}-${phase}`}
+          className={`animate-question-in flex items-center justify-center gap-3 px-4 py-3 rounded-2xl text-white shadow-lg ${
+            phase === 'timeUp' || phase === 'otherChance'
+              ? 'bg-gradient-to-l from-amber-500 to-amber-400'
+              : turnTeamId === teamAId
+                ? 'bg-gradient-to-l from-brand-600 to-brand-500'
+                : 'bg-gradient-to-l from-rose-600 to-rose-500'
+          }`}
+        >
+          {phase === 'otherChance' ? (
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-bold">دور {otherTeam?.name} للإجابة — بدون مؤقت</span>
+            </>
+          ) : (
+            <span className="font-bold">دور: {turnTeam?.name}</span>
+          )}
+        </div>
 
-      <div key={current.id} className="animate-question-in bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 text-center">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <span className="text-xs font-bold text-brand-600 bg-brand-50 rounded-full px-3 py-1">
+        <div className="grid grid-cols-2 lg:grid-cols-[280px_minmax(0,1fr)_280px] xl:grid-cols-[320px_minmax(0,1fr)_320px] 2xl:grid-cols-[360px_minmax(0,1fr)_360px] gap-3 sm:gap-4 lg:gap-6 lg:flex-1 lg:items-stretch">
+          <TeamCard
+            team={teamA}
+            isDimmed={isTeamDimmed(teamA.id)}
+            highlightColor={getTeamHighlight(teamA.id)}
+            gradient="from-brand-600 to-brand-500"
+            ring="ring-brand-300"
+            accent="text-brand-700 bg-brand-50 border-brand-200 hover:bg-brand-100"
+            flash={scoreFlash}
+            showJudge={!isMc && ((phase === 'active' && turnTeamId === teamA.id) || (phase === 'otherChance' && otherTeamId === teamA.id))}
+            onCorrect={() => creditTeam(teamA.id)}
+            className="lg:col-start-1 lg:row-start-1"
+          />
+          <TeamCard
+            team={teamB}
+            isDimmed={isTeamDimmed(teamB.id)}
+            highlightColor={getTeamHighlight(teamB.id)}
+            gradient="from-rose-600 to-rose-500"
+            ring="ring-rose-300"
+            accent="text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100"
+            flash={scoreFlash}
+            showJudge={!isMc && ((phase === 'active' && turnTeamId === teamB.id) || (phase === 'otherChance' && otherTeamId === teamB.id))}
+            onCorrect={() => creditTeam(teamB.id)}
+            className="lg:col-start-3 lg:row-start-1"
+          />
+          <div className="col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 flex flex-col gap-4 lg:gap-6 lg:justify-center">
+
+      <div key={current.id} className="animate-question-in bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 lg:p-10 xl:p-12 text-center">
+        <div className="flex items-center justify-center gap-2 mb-4 lg:mb-6">
+          <span className="text-xs lg:text-sm font-bold text-brand-600 bg-brand-50 rounded-full px-3 py-1">
             السؤال {questionIndex + 1} من {total}
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs lg:text-sm text-slate-400">
             {bank.subject && `${bank.subject} · `}
             {bank.title}
           </span>
           {isMc && (
-            <span className="text-xs font-bold text-sky-600 bg-sky-50 rounded-full px-3 py-1">
+            <span className="text-xs lg:text-sm font-bold text-sky-600 bg-sky-50 rounded-full px-3 py-1">
               اختيار من متعدد
             </span>
           )}
         </div>
-        <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-800 leading-relaxed max-w-4xl mx-auto">
+        <p className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold text-slate-800 leading-relaxed max-w-5xl mx-auto">
           {current.text}
         </p>
 
         {phase === 'active' && (
-          <div className="mt-5 flex justify-center">
+          <div className="mt-5 flex justify-center lg:hidden">
             <TimerCircle seconds={timer} duration={duration} />
           </div>
         )}
       </div>
 
       {isMc && (
-        <div className="animate-question-in grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-4xl mx-auto w-full">
+        <div className="animate-question-in grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 max-w-4xl mx-auto w-full">
           {current.options.map((option, i) => {
             let cls = 'border-slate-200 hover:border-brand-400 hover:bg-brand-50 text-slate-700'
             let extra = null
@@ -299,11 +308,11 @@ export default function QuestionRound() {
                 key={i}
                 onClick={() => handleMcPick(i)}
                 disabled={phase === 'timeUp'}
-                className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-start text-sm font-semibold transition-all active:scale-[0.98] ${cls} ${
+                className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3.5 lg:px-6 lg:py-4.5 text-start text-sm lg:text-base font-semibold transition-all active:scale-[0.98] ${cls} ${
                   phase === 'timeUp' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
                 }`}
               >
-                <span className="w-8 h-8 shrink-0 rounded-full bg-white border border-current flex items-center justify-center text-xs font-black">
+                <span className="w-8 h-8 lg:w-10 lg:h-10 shrink-0 rounded-full bg-white border border-current flex items-center justify-center text-xs lg:text-sm font-black">
                   {String.fromCharCode(65 + i)}
                 </span>
                 <span className="flex-1 leading-relaxed">{option}</span>
@@ -315,23 +324,23 @@ export default function QuestionRound() {
       )}
 
       {phase === 'timeUp' && (
-        <div className="animate-question-in bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 text-center space-y-3">
-          <div className="w-12 h-12 mx-auto rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <div className="animate-question-in bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 lg:p-8 text-center space-y-3">
+          <div className="w-12 h-12 lg:w-14 lg:h-14 mx-auto rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+            <svg className="w-6 h-6 lg:w-7 lg:h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="font-bold text-amber-800">انتهى الوقت!</p>
+          <p className="font-bold text-amber-800 lg:text-xl">انتهى الوقت!</p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={() => setPhase('otherChance')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-l from-brand-600 to-brand-500 text-white text-sm font-bold hover:from-brand-700 hover:to-brand-600 transition-all shadow"
+              className="inline-flex items-center gap-2 px-5 py-2.5 lg:px-7 lg:py-3 rounded-xl bg-gradient-to-l from-brand-600 to-brand-500 text-white text-sm lg:text-base font-bold hover:from-brand-700 hover:to-brand-600 transition-all shadow"
             >
               أعطِ {otherTeam?.name} فرصة للإجابة
             </button>
             <button
               onClick={handleAdvance}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 lg:px-7 lg:py-3 rounded-xl border border-slate-200 text-slate-600 text-sm lg:text-base font-semibold hover:bg-slate-50 transition-colors"
             >
               السؤال التالي
             </button>
@@ -343,7 +352,7 @@ export default function QuestionRound() {
         <div className="text-center">
           <button
             onClick={handleAdvance}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-500 text-sm font-semibold hover:bg-slate-50 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 lg:px-6 lg:py-2.5 rounded-xl border border-slate-200 text-slate-500 text-sm lg:text-base font-semibold hover:bg-slate-50 transition-colors"
           >
             تخطي والسؤال التالي
           </button>
@@ -351,17 +360,18 @@ export default function QuestionRound() {
       )}
 
       {!isMc && (phase === 'active' || phase === 'otherChance') && (
-        <p className="text-center text-sm text-slate-400">
+        <p className="text-center text-sm lg:text-base text-slate-400">
           اضغط زر "إجابة صحيحة" على بطاقة الفريق عند الإجابة الصحيحة
         </p>
       )}
         </div>
       </div>
     </div>
+    </div>
   )
 }
 
-function TimerCircle({ seconds, duration }) {
+function TimerCircle({ seconds, duration, large }) {
   const pct = Math.max(0, (seconds / Math.max(duration, 1)) * 100)
   const low = seconds <= 10
   const mid = seconds <= 30
@@ -373,25 +383,31 @@ function TimerCircle({ seconds, duration }) {
   const bgColor = low ? '#fff1f2' : mid ? '#fffbeb' : '#eef2ff'
 
   return (
-    <div className={`relative w-20 h-20 rounded-full bg-white shadow-lg border-2 flex items-center justify-center ${
+    <div className={`relative rounded-full bg-white shadow-xl border-2 flex items-center justify-center ${
+      large ? 'w-28 h-28 shadow-2xl border-[3px]' : 'w-20 h-20 shadow-lg'
+    } ${
       low ? 'animate-pulse border-rose-300' : mid ? 'border-amber-300' : 'border-indigo-300'
     } ${low && seconds <= 5 ? 'animate-timer-critical' : ''}`}>
       <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r={radius} fill="none" stroke={bgColor} strokeWidth="4" />
+        <circle cx="32" cy="32" r={radius} fill="none" stroke={bgColor} strokeWidth={large ? '3.5' : '4'} />
         <circle
           cx="32" cy="32" r={radius} fill="none"
-          stroke={strokeColor} strokeWidth="4" strokeLinecap="round"
+          stroke={strokeColor} strokeWidth={large ? '3.5' : '4'} strokeLinecap="round"
           strokeDasharray={circumference} strokeDashoffset={offset}
           style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease' }}
         />
       </svg>
       <div className="flex flex-col items-center justify-center">
-        <span className={`text-xl font-black tabular-nums leading-none ${
+        <span className={`font-black tabular-nums leading-none ${
+          large ? 'text-3xl' : 'text-xl'
+        } ${
           low ? 'text-rose-600' : mid ? 'text-amber-600' : 'text-indigo-600'
         }`}>
           {seconds}
         </span>
-        <span className="text-[9px] font-semibold text-slate-400 mt-0.5">ثانية</span>
+        <span className={`font-semibold text-slate-400 mt-0.5 ${
+          large ? 'text-xs' : 'text-[9px]'
+        }`}>ثانية</span>
       </div>
     </div>
   )
@@ -410,7 +426,7 @@ function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flas
   }
 
   return (
-    <div className={`relative bg-white rounded-2xl border p-4 text-center overflow-visible transition-all duration-300 ${
+    <div className={`relative bg-white rounded-2xl border p-4 lg:p-6 text-center overflow-visible transition-all duration-300 ${
       isDimmed ? 'opacity-40' : ''
     } ${borderClass} ${className} flex flex-col justify-center h-full`}>
       {isFlash && (
@@ -421,10 +437,10 @@ function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flas
         </div>
       )}
 
-      <div className="flex items-center justify-center mb-2">
+      <div className="flex items-center justify-center mb-3 lg:mb-4">
         <div
           key={`avatar-${flash?.nonce}`}
-          className={`w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center text-xl lg:text-2xl font-bold shadow-lg ${
+          className={`w-12 h-12 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center text-xl lg:text-3xl font-bold shadow-lg ${
             isFlash ? 'animate-ring-pulse ring-4 ' + ring : ''
           }`}
         >
@@ -432,21 +448,21 @@ function TeamCard({ team, isDimmed, highlightColor, gradient, ring, accent, flas
         </div>
       </div>
 
-      <p className="font-bold text-slate-800 truncate text-sm lg:text-lg">{team.name}</p>
+      <p className="font-bold text-slate-800 truncate text-sm lg:text-xl">{team.name}</p>
       <p
         key={`score-${flash?.nonce}`}
-        className={`text-3xl lg:text-4xl font-black text-slate-800 tabular-nums mt-1 ${isFlash ? 'animate-score-pop' : ''}`}
+        className={`text-3xl lg:text-5xl font-black text-slate-800 tabular-nums mt-1 lg:mt-2 ${isFlash ? 'animate-score-pop' : ''}`}
       >
         {team.points}
       </p>
-      <p className="text-xs text-slate-400 mt-0.5">نقطة</p>
+      <p className="text-xs lg:text-sm text-slate-400 mt-0.5">نقطة</p>
 
       {showJudge && (
         <button
           onClick={onCorrect}
-          className={`mt-3 w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border text-xs lg:text-sm font-bold transition-colors ${accent} active:scale-95`}
+          className={`mt-3 lg:mt-4 w-full inline-flex items-center justify-center gap-2 px-3 py-2 lg:px-5 lg:py-3 rounded-xl border text-xs lg:text-base font-bold transition-colors ${accent} active:scale-95`}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
           إجابة صحيحة
@@ -462,24 +478,24 @@ function RoundHeader({ bank, questionIndex, total, finished }) {
       <div className="flex items-center gap-4">
         <Link
           to="/challenges"
-          className="w-10 h-10 rounded-xl border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-slate-50 transition-colors"
+          className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-slate-50 transition-colors"
           aria-label="العودة للتحدي"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </Link>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">المواجهة</h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <h2 className="text-2xl lg:text-3xl font-bold text-slate-800">المواجهة</h2>
+          <p className="text-sm lg:text-base text-slate-500 mt-1">
             {finished ? 'انتهت الأسئلة — اعرض النتيجة النهائية' : `${bank.title} · السؤال ${questionIndex + 1} من ${total}`}
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 px-5 py-3 flex items-center gap-3">
-        <span className="text-xs text-slate-400">بنك الأسئلة</span>
-        <span className="text-sm font-semibold text-slate-700">{bank.title}</span>
+      <div className="bg-white rounded-2xl border border-slate-200 px-5 py-3 lg:px-6 lg:py-3.5 flex items-center gap-3">
+        <span className="text-xs lg:text-sm text-slate-400">بنك الأسئلة</span>
+        <span className="text-sm lg:text-base font-semibold text-slate-700">{bank.title}</span>
       </div>
     </div>
   )
@@ -506,7 +522,7 @@ function MissingHeader() {
 
 function ResultCard({ teamA, teamB, winner }) {
   return (
-    <div className="animate-question-in bg-white rounded-2xl border border-slate-200 p-10 text-center relative overflow-hidden">
+    <div className="animate-question-in bg-white rounded-2xl border border-slate-200 p-10 lg:p-14 text-center relative overflow-hidden">
       <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center gap-3" aria-hidden="true">
         {confettiColors.map((c, i) => (
           <span

@@ -113,3 +113,21 @@ html {
 .animate-timer-critical {
   animation: timer-pulse-ring 0.8s ease-out infinite;
 }
+
+@keyframes phone-rotate {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(90deg);
+  }
+  50% {
+    transform: rotate(90deg);
+  }
+  75% {
+    transform: rotate(0deg);
+  }
+}
+.animate-phone-rotate {
+  animation: phone-rotate 2.5s ease-in-out infinite;
+}

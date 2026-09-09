@@ -7,12 +7,22 @@ import {
   loadTimerDuration,
   saveChallenge,
 } from '../utils/storage.js'
+import LandscapeGuard from '../components/LandscapeGuard.jsx'
 
 const confettiColors = ['#6366f1', '#f43f5e', '#f59e0b', '#10b981', '#0ea5e9', '#a855f7']
+
+function getIsLandscape() {
+  if (typeof window === 'undefined') return true
+  if (window.screen?.orientation?.type) {
+    return window.screen.orientation.type.includes('landscape')
+  }
+  return window.innerWidth > window.innerHeight
+}
 
 export default function QuestionRound() {
   const location = useLocation()
   const { teamAId, teamBId, bankId, timerDuration: passedDuration } = location.state || {}
+  const [isLandscape, setIsLandscape] = useState(getIsLandscape)
   const [questionIndex, setQuestionIndex] = useState(0)
   const [teams, setTeams] = useState(loadTeams)
   const [scoreFlash, setScoreFlash] = useState(null)
@@ -42,6 +52,19 @@ export default function QuestionRound() {
         ? teamA
         : teamB
     : null
+
+  useEffect(() => {
+    function check() {
+      const isMobile = window.innerWidth < 768
+      if (isMobile) setIsLandscape(getIsLandscape())
+    }
+    window.addEventListener('orientationchange', check)
+    window.addEventListener('resize', check)
+    return () => {
+      window.removeEventListener('orientationchange', check)
+      window.removeEventListener('resize', check)
+    }
+  }, [])
 
   useEffect(() => {
     if (finished) return
@@ -118,6 +141,15 @@ export default function QuestionRound() {
           </Link>
         </div>
       </div>
+    )
+  }
+
+  if (!isLandscape) {
+    return (
+      <LandscapeGuard
+        onConfirm={() => setIsLandscape(true)}
+        onCancel={() => window.history.back()}
+      />
     )
   }
 

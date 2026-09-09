@@ -153,20 +153,7 @@ export default function Layout() {
             <span>· اليوم هو الثلاثاء 8 سبتمبر</span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <span className="absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
-              <button className="p-2 rounded-lg hover:bg-slate-100 text-slate-600" aria-label="الإشعارات">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-              </button>
-            </div>
-            <div className="hidden sm:block">
-              <p className="text-sm font-semibold text-slate-800 leading-tight">أ. ياسين</p>
-              <p className="text-xs text-slate-400">معلم</p>
-            </div>
-          </div>
+
         </header>
 
         <main className="p-4 sm:p-6 lg:p-8">

@@ -453,10 +453,11 @@ EC.challenge = (function () {
     startQuestion();
   }
 
-  /* ---------- رسم واجهة اللعبة ---------- */
+/* ---------- رسم واجهة اللعبة ---------- */
   function renderGame() {
     var question = game.questions[game.index];
     var attacker = currentAttacker();
+    var stateClass = game.status ? " is-" + game.status.type : "";
 
     view.innerHTML =
       '<div class="view">' +
@@ -473,31 +474,29 @@ EC.challenge = (function () {
       '  <div class="progress-track"><div class="progress-fill" style="width:' +
       Math.round(((game.index + 1) / game.questions.length) * 100) +
       '%"></div></div>' +
-      '  <div class="teams-stage">' +
-      teamCard("a", attacker) +
-      teamCard("b", attacker) +
-      "  </div>" +
-      '  <div class="question-panel">' +
-      '    <div class="timer-wrap" id="timer-wrap">' +
-      '      <svg class="timer-ring" viewBox="0 0 100 100" aria-hidden="true">' +
-      '        <circle class="ring-track" cx="50" cy="50" r="44" />' +
-      '        <circle class="ring-fill' + (game.timeLeft <= 5 ? " is-critical" : "") + '" id="ring-fill" cx="50" cy="50" r="44" />' +
-      "      </svg>" +
-      '      <span class="timer-text" id="timer-text">' + game.timeLeft + "</span>" +
-      "    </div>" +
-      '    <p class="question-text">' + esc(question.text) + "</p>" +
-      '    <div class="options">' +
+      '  <div class="game-stage">' +
+      teamPanel("a", attacker) +
+      '    <section class="question-panel' + stateClass + '">' +
+      '      <div class="timer-wrap" id="timer-wrap">' +
+      '        <svg class="timer-ring" viewBox="0 0 100 100" aria-hidden="true">' +
+      '          <circle class="ring-track" cx="50" cy="50" r="44" />' +
+      '          <circle class="ring-fill' + (game.timeLeft <= 5 ? " is-critical" : "") + '" id="ring-fill" cx="50" cy="50" r="44" />' +
+      "        </svg>" +
+      '        <span class="timer-text" id="timer-text">' + game.timeLeft + "</span>" +
+      "      </div>" +
+      '      <p class="question-text">' + esc(question.text) + "</p>" +
+      '      <div class="options">' +
       question.options
         .map(function (opt, i) {
           return optionButton(opt, i, question);
         })
         .join("") +
-      "    </div>" +
-      '    <div class="game-status' +
-      (game.status ? " is-" + game.status.type : "") +
-      '">' +
+      "      </div>" +
+      '      <div class="game-status' + stateClass + '">' +
       (game.status ? esc(game.status.text) : "بانتظار إجابة الفريق...") +
       "</div>" +
+      "    </section>" +
+      teamPanel("b", attacker) +
       "  </div>" +
       "</div>";
 
@@ -507,23 +506,21 @@ EC.challenge = (function () {
     ringEl.style.strokeDashoffset = (RING_CIRCUMFERENCE * (1 - pct)).toFixed(1);
   }
 
-  /* ---------- بطاقة فريق ---------- */
-  function teamCard(key, attacker) {
+/* ---------- لوحة فريق (لوحة نقاط جانبية) ---------- */
+  function teamPanel(key, attacker) {
     var team = game.teams[key];
     var isActive = key === attacker;
 
     return (
-      '<div class="team-card team-' + key + (isActive ? " is-active" : "") + '">' +
-      '  <div class="team-card-info">' +
-      '    <div class="team-card-name">' +
-      '      <span class="team-dot"></span>' +
-      esc(team.name) +
+      '<aside class="team-panel team-' + key + (isActive ? " is-active" : "") + '">' +
+      '  <div class="team-panel-head">' +
+      '    <span class="team-dot"></span>' +
+      '    <span class="team-panel-name">' + esc(team.name) + "</span>" +
       (isActive ? ' <span class="turn-badge">دورها الآن</span>' : "") +
-      "</div>" +
-      '    <div class="team-card-stat">إجابات صحيحة: ' + game.corrects[key] + "</div>" +
       "  </div>" +
-      '  <div class="team-score">' + game.scores[key] + "</div>" +
-      "</div>"
+      '  <div class="team-panel-score">' + game.scores[key] + "</div>" +
+      '  <div class="team-panel-stat">إجابات صحيحة: ' + game.corrects[key] + "</div>" +
+      "</aside>"
     );
   }
 

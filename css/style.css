@@ -1,12 +1,11 @@
 /* =========================================================
    تحدي الفرق — ملف التنسيقات الرئيسي
-   مبادئ التصميم: ألوان مسطحة فقط (بدون تدرجات)، مسافات
-   متناسقة، خطوط Cairo، واجهة RTL بالكامل.
+   مبادئ التصميم: ألوان مسطحة، مسافات متناسقة، خطوط Cairo،
+   واجهة RTL بالكامل، متجاوبة لجميع الشاشات، بدون حركات مزعجة.
    ========================================================= */
 
 /* ---------------- المتغيرات (Design Tokens) ---------------- */
 :root {
-  /* ألوان مسطحة صلبة */
   --bg: #f4f5f7;
   --surface: #ffffff;
   --surface-2: #fafafa;
@@ -36,20 +35,17 @@
   --amber-soft: #fffbeb;
   --amber-ink: #b45309;
 
-  /* ألوان الفريقين */
   --team-a: #4f46e5;
   --team-a-soft: #eef2ff;
   --team-b: #059669;
   --team-b-soft: #ecfdf5;
 
-  /* الأشكال والمسافات */
   --radius-sm: 8px;
   --radius: 12px;
   --radius-lg: 18px;
   --space: 16px;
-  --max-width: 1120px;
+  --max-width: 1220px;
 
-  /* ظلال ناعمة مسطحة (ليست تدرجات) */
   --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.06);
   --shadow: 0 1px 3px rgba(17, 24, 39, 0.08), 0 6px 16px rgba(17, 24, 39, 0.05);
   --shadow-lg: 0 12px 34px rgba(17, 24, 39, 0.14);
@@ -67,6 +63,7 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -77,6 +74,7 @@ body {
   font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
 }
 
 h1,
@@ -107,12 +105,17 @@ ul {
   list-style: none;
 }
 
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 /* الحاوية المركزية */
 .container {
   width: 100%;
   max-width: var(--max-width);
   margin-inline: auto;
-  padding-inline: 20px;
+  padding-inline: clamp(14px, 3vw, 28px);
 }
 
 /* ---------------- الشريط العلوي ---------------- */
@@ -128,14 +131,15 @@ ul {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  height: 68px;
+  gap: 14px;
+  min-height: 68px;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: none;
 }
 
 .brand-mark {
@@ -174,6 +178,13 @@ ul {
   background-color: var(--surface-3);
   padding: 5px;
   border-radius: 999px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-btn {
@@ -183,7 +194,7 @@ ul {
   font-weight: 600;
   padding: 8px 18px;
   border-radius: 999px;
-  transition: background-color 0.18s ease, color 0.18s ease;
+  white-space: nowrap;
 }
 
 .nav-btn:hover {
@@ -196,20 +207,35 @@ ul {
   box-shadow: var(--shadow-sm);
 }
 
-/* ---------------- الواجهات العامة ---------------- */
-.view {
-  padding: 32px 0 64px;
-  animation: view-in 0.3s ease both;
+@media (max-width: 640px) {
+  .topbar-inner {
+    min-height: 60px;
+  }
+  .brand-sub {
+    display: none;
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    font-size: 17px;
+  }
+  .brand-title {
+    font-size: 15px;
+  }
+  .nav-btn {
+    padding: 7px 13px;
+    font-size: 13px;
+  }
 }
 
-@keyframes view-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+/* ---------------- الواجهات العامة ---------------- */
+.view {
+  padding: 28px 0 56px;
+}
+
+@media (min-width: 1100px) {
+  .view {
+    padding: 40px 0 72px;
   }
 }
 
@@ -223,14 +249,15 @@ ul {
 }
 
 .page-title {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: clamp(22px, 3.5vw, 30px);
+  font-weight: 800;
+  line-height: 1.3;
 }
 
 .page-sub {
   color: var(--text-2);
   font-size: 14px;
-  margin-top: 4px;
+  margin-top: 5px;
 }
 
 /* ---------------- البطاقات ---------------- */
@@ -243,6 +270,12 @@ ul {
 
 .card-pad {
   padding: 20px;
+}
+
+@media (min-width: 1100px) {
+  .card-pad {
+    padding: 24px;
+  }
 }
 
 /* شبكة البطاقات */
@@ -259,10 +292,14 @@ ul {
   grid-template-columns: repeat(2, 1fr);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1080px) {
   .grid-3 {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
+}
+
+@media (max-width: 680px) {
+  .grid-3,
   .grid-2 {
     grid-template-columns: 1fr;
   }
@@ -279,12 +316,7 @@ ul {
   padding: 10px 18px;
   font-weight: 700;
   font-size: 14px;
-  transition: background-color 0.16s ease, color 0.16s ease,
-    border-color 0.16s ease, transform 0.12s ease;
-}
-
-.btn:active {
-  transform: translateY(1px);
+  line-height: 1.4;
 }
 
 .btn.primary {
@@ -346,12 +378,13 @@ ul {
   background-color: var(--surface);
   color: var(--text-2);
   border-radius: 8px;
-  width: 34px;
+  min-width: 34px;
   height: 34px;
-  display: inline-grid;
-  place-items: center;
-  font-size: 14px;
-  transition: all 0.16s ease;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
 }
 
 .icon-btn:hover {
@@ -382,12 +415,12 @@ ul {
 .input,
 .textarea {
   width: 100%;
+  min-width: 0;
   background-color: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: 10px;
   padding: 11px 14px;
   outline: none;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .input:focus,
@@ -470,7 +503,7 @@ ul {
 .empty-text {
   color: var(--text-2);
   font-size: 14px;
-  max-width: 420px;
+  max-width: 440px;
   margin: 0 auto 18px;
 }
 
@@ -480,7 +513,7 @@ ul {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+  min-width: 0;
 }
 
 .bank-card:hover {
@@ -498,6 +531,7 @@ ul {
 .bank-name {
   font-size: 16px;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .bank-sub {
@@ -516,6 +550,7 @@ ul {
   display: flex;
   gap: 8px;
   margin-top: auto;
+  flex-wrap: wrap;
 }
 
 .crumb {
@@ -523,6 +558,8 @@ ul {
   align-items: center;
   gap: 10px;
   margin-bottom: 18px;
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
 .crumb button {
@@ -597,6 +634,7 @@ ul {
   font-size: 13.5px;
   color: var(--text-2);
   background-color: var(--surface-2);
+  overflow-wrap: anywhere;
 }
 
 .q-options li.is-correct {
@@ -634,6 +672,7 @@ ul {
   font-weight: 700;
   flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .team-form {
@@ -654,9 +693,9 @@ ul {
   background-color: rgba(17, 24, 39, 0.45);
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: 18px;
   z-index: 100;
-  animation: view-in 0.2s ease both;
+  overflow-y: auto;
 }
 
 .modal-card {
@@ -667,18 +706,6 @@ ul {
   max-width: 560px;
   max-height: 90vh;
   overflow-y: auto;
-  animation: modal-in 0.24s ease both;
-}
-
-@keyframes modal-in {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
 
 .modal-head {
@@ -697,6 +724,7 @@ ul {
 
 .modal-body {
   padding: 20px;
+  overflow-wrap: anywhere;
 }
 
 .modal-foot {
@@ -705,6 +733,7 @@ ul {
   gap: 10px;
   padding: 16px 20px;
   border-top: 1px solid var(--border);
+  flex-wrap: wrap;
 }
 
 /* محرر خيارات السؤال */
@@ -759,9 +788,12 @@ ul {
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
   z-index: 200;
   pointer-events: none;
+  width: max-content;
+  max-width: calc(100vw - 32px);
 }
 
 .toast {
@@ -773,13 +805,11 @@ ul {
   font-weight: 600;
   box-shadow: var(--shadow-lg);
   opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.2s ease;
 }
 
 .toast.show {
   opacity: 1;
-  transform: translateY(0);
 }
 
 .toast.success {
@@ -798,7 +828,7 @@ ul {
   align-items: start;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 960px) {
   .setup-grid {
     grid-template-columns: 1fr;
   }
@@ -813,8 +843,8 @@ ul {
   padding: 14px 16px;
   background-color: var(--surface);
   cursor: pointer;
-  transition: border-color 0.16s ease, background-color 0.16s ease;
   margin-bottom: 10px;
+  min-width: 0;
 }
 
 .bank-option:hover {
@@ -847,6 +877,7 @@ ul {
 
 .bank-option-title {
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .bank-option-sub {
@@ -869,7 +900,11 @@ ul {
   padding: 7px 15px;
   font-weight: 700;
   font-size: 13px;
-  transition: all 0.16s ease;
+}
+
+.preset:hover {
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .preset.is-active {
@@ -889,6 +924,7 @@ ul {
   font-size: 13.5px;
   color: var(--amber-ink);
   font-weight: 600;
+  flex-wrap: wrap;
 }
 
 .hint.info {
@@ -897,19 +933,29 @@ ul {
   color: var(--primary-ink);
 }
 
-/* ---------------- واجهة التحدي: اللعب ---------------- */
+/* =========================================================
+   واجهة التحدي: اللعب — منصة العرض (Stage)
+   على الشاشات الكبيرة: لوحتا النقاط على الجانبين
+   وسؤال في المنتصف، تصميم جاد ومريح.
+   ========================================================= */
+
 .game-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   flex-wrap: wrap;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .game-progress {
   font-weight: 700;
   color: var(--text-2);
+  font-size: 14px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .progress-track {
@@ -917,66 +963,89 @@ ul {
   background-color: var(--surface-3);
   border-radius: 999px;
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .progress-fill {
   height: 100%;
   background-color: var(--primary);
   border-radius: 999px;
-  transition: width 0.35s ease;
 }
 
-/* بطاقتا الفريقين */
-.teams-stage {
+/* منصة العرض */
+.game-stage {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 14px;
+  align-items: stretch;
 }
 
-@media (max-width: 720px) {
-  .teams-stage {
-    grid-template-columns: 1fr;
-  }
-}
-
-.team-card {
-  border: 2px solid var(--border);
-  border-radius: var(--radius);
+.question-panel {
+  grid-column: 1 / -1;
   background-color: var(--surface);
-  padding: 16px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  transition: border-color 0.2s ease, background-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-/* تمييز الفريق صاحب الدور */
-.team-card.is-active.team-a {
-  border-color: var(--team-a);
-  background-color: var(--team-a-soft);
-  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
-}
-
-.team-card.is-active.team-b {
-  border-color: var(--team-b);
-  background-color: var(--team-b-soft);
-  box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.12);
-}
-
-.team-card-info {
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: clamp(20px, 4vw, 28px);
+  text-align: center;
   min-width: 0;
 }
 
-.team-card-name {
-  font-size: 17px;
-  font-weight: 800;
+/* إشارات الحالة على غطاء اللوحة */
+.question-panel.is-success {
+  border-top-color: var(--success);
+}
+
+.question-panel.is-warn {
+  border-top-color: var(--amber);
+}
+
+.question-panel.is-danger {
+  border-top-color: var(--danger);
+}
+
+/* لوحتا الفريقين */
+.team-panel {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  min-width: 0;
+}
+
+.team-panel-head {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.team-panel-name {
+  font-weight: 800;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-panel-score {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.team-panel-stat {
+  display: none;
 }
 
 .team-a .team-dot {
@@ -987,24 +1056,25 @@ ul {
   background-color: var(--team-b);
 }
 
-.team-card-stat {
-  font-size: 12.5px;
-  color: var(--text-3);
-  margin-top: 3px;
-}
-
-.team-score {
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.team-a .team-score {
+.team-a .team-panel-score {
   color: var(--team-a);
 }
 
-.team-b .team-score {
+.team-b .team-panel-score {
   color: var(--team-b);
+}
+
+/* تمييز الفريق صاحب الدور */
+.team-panel.is-active.team-a {
+  border-color: var(--team-a);
+  background-color: var(--team-a-soft);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.team-panel.is-active.team-b {
+  border-color: var(--team-b);
+  background-color: var(--team-b-soft);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
 }
 
 .turn-badge {
@@ -1014,33 +1084,72 @@ ul {
   border-radius: 999px;
   background-color: var(--primary);
   color: #fff;
+  flex: none;
+  white-space: nowrap;
 }
 
 .team-b .turn-badge {
   background-color: var(--team-b);
 }
 
-/* لوحة السؤال */
-.question-panel {
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: 26px;
-  text-align: center;
+/* على الشاشات الكبيرة: لوحتا النقاط على الجانبين */
+@media (min-width: 1100px) {
+  .game-stage {
+    grid-template-columns: 260px minmax(0, 1fr) 260px;
+    gap: 20px;
+  }
+
+  .question-panel {
+    grid-column: auto;
+    padding: 40px 44px;
+  }
+
+  .team-panel {
+    flex-direction: column;
+    justify-content: flex-start;
+    text-align: center;
+    padding: 26px 18px;
+  }
+
+  .team-panel-head {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .team-panel-name {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .team-panel-score {
+    font-size: 56px;
+    margin: 16px 0;
+  }
+
+  .team-panel-stat {
+    display: block;
+    font-size: 13px;
+    color: var(--text-3);
+    margin-top: auto;
+  }
+
+  .team-panel .turn-badge {
+    margin-top: 8px;
+  }
 }
 
 /* حلقة المؤقت */
 .timer-wrap {
   position: relative;
-  width: 118px;
-  height: 118px;
-  margin: 0 auto 20px;
+  width: 104px;
+  height: 104px;
+  margin: 0 auto 18px;
 }
 
 .timer-ring {
-  width: 118px;
-  height: 118px;
+  width: 104px;
+  height: 104px;
   transform: rotate(-90deg);
 }
 
@@ -1055,9 +1164,9 @@ ul {
   stroke: var(--primary);
   stroke-width: 9;
   stroke-linecap: round;
-  stroke-dasharray: 276.5;
+  stroke-dasharray: 276.46;
   stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+  transition: stroke-dashoffset 1s linear;
 }
 
 .ring-fill.is-critical {
@@ -1069,31 +1178,40 @@ ul {
   inset: 0;
   display: grid;
   place-items: center;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 800;
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .timer-wrap.is-critical .timer-text {
   color: var(--danger);
-  animation: timer-beat 0.9s ease-in-out infinite;
 }
 
-@keyframes timer-beat {
-  0%,
-  100% {
-    transform: scale(1);
+@media (min-width: 1100px) {
+  .timer-wrap,
+  .timer-ring {
+    width: 136px;
+    height: 136px;
   }
-  50% {
-    transform: scale(1.12);
+
+  .timer-text {
+    font-size: 38px;
   }
 }
 
 .question-text {
-  font-size: 21px;
+  font-size: clamp(18px, 2.2vw, 22px);
   font-weight: 700;
   margin-bottom: 22px;
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+@media (min-width: 1100px) {
+  .question-text {
+    font-size: 26px;
+    line-height: 1.65;
+  }
 }
 
 /* خيارات الإجابة */
@@ -1121,8 +1239,8 @@ ul {
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: border-color 0.16s ease, background-color 0.16s ease,
-    transform 0.12s ease;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .option-btn:hover:not(:disabled) {
@@ -1169,6 +1287,20 @@ ul {
   color: #fff;
 }
 
+/* على الشاشات الكبيرة تصبح الخيارات أكبر وأريح */
+@media (min-width: 1100px) {
+  .option-btn {
+    padding: 18px 20px;
+    font-size: 17px;
+  }
+
+  .option-key {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+}
+
 /* شريط حالة اللعبة */
 .game-status {
   margin-top: 20px;
@@ -1203,7 +1335,7 @@ ul {
 /* ---------------- واجهة النتائج ---------------- */
 .result-hero {
   text-align: center;
-  padding: 40px 24px 30px;
+  padding: clamp(28px, 5vw, 44px) 24px 28px;
 }
 
 .result-trophy {
@@ -1221,7 +1353,7 @@ ul {
 }
 
 .result-title {
-  font-size: 26px;
+  font-size: clamp(24px, 3.5vw, 30px);
   font-weight: 800;
   margin-bottom: 8px;
 }
@@ -1276,6 +1408,7 @@ ul {
 .review-item p {
   font-weight: 700;
   font-size: 14.5px;
+  overflow-wrap: anywhere;
 }
 
 .review-answer {
@@ -1329,4 +1462,19 @@ ul {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+/* ---------------- تقليل الحركة حسب إعدادات النظام ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
